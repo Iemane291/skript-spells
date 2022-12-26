@@ -1,0 +1,58 @@
+function line(loc1: location, loc2: location, particl: particle, step: number=0.25):
+    set {_v} to vector from {_loc1} to {_loc2}
+    set vector length of {_v} to {_step}
+    loop floor((distance between {_loc1} and {_loc2}) / {_step}) times:
+        draw 1 {_particl} at {_loc1} with extra 0 with force
+        set {_loc1} to {_loc1} ~ {_v}
+
+on load:
+    set {-pressSound} to "block.note_block.bell"
+    set {-declineSound} to "entity.villager.no"
+    if {spell::%uuid of player%} isn't set:
+        set {spell::%uuid of player%} to "oak_wood"
+
+on right click:
+    if {spell::%uuid of player%} is "oak_wood":
+        if target block isn't air:
+            set {_b} to type of target block
+            set target block of player to oak wood
+            wait 2.5 seconds
+            set location of target block of player to {_b}
+        else:
+            send "&cYou are not looking at a block!"
+            play sound {-declineSound}
+    else if {spell::%uuid of player%} is "blaze_rod":
+        if target entity is set:
+            line(player's eyes, target entity's eyes, flame, 0.25)
+        else if target entity isn't set:
+            send "&cYou must look at an entity!"
+
+command /spell:
+    trigger:
+        set metadata tag "spells1" of player to chest inventory named "Spells" with 6 rows
+        set {_s} to metadata tag "spells1" of player
+        set slot integers between 0 and 8 of {_s} to black stained glass pane
+        set {-i::*} to 8, 17, 26, 35, 44, 53, 9, 18, 27, 36, 45, 54, 46, 47, 48, 49, 50, 51, 52, 53 and 55
+        loop {-i::*}:
+            set slot loop-value of {_s} to black stained glass pane
+        set slot 10 of {_s} to oak wood named "<##8A2700>Oak Wood" with lore "&7&oTurn whatever block you look" and "&7&oat into oak wood!" and "" and "&cNOT SELECTED"
+        if {spell::%uuid of player%} is "oak_wood":
+            set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
+        open (metadata tag "spells1" of player) to player
+
+on inventory click:
+    if event-inventory is (metadata tag "spells1" of player):
+        cancel event
+        set {_s} to metadata tag "spells1" of player
+        if index of event-slot is 10:
+            play sound {-pressSound}
+            if {spell::%uuid of player%} isn't "oak_wood":
+                set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
+                set {spell::%uuid of player%} to "oak_wood"
+            else:
+                set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
+                set {spell::%uuid of player%} to ""
+        else if index of event-slot is 11:
+            set {spell::%uuid of player%} to "blaze_rod"
+            play sound {-pressSound}
+
