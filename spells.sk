@@ -1,9 +1,23 @@
+import:
+    org.bukkit.entity.Entity
+
+# particle function by poa (creator of poask addon)
 function line(loc1: location, loc2: location, particl: particle, step: number=0.25):
     set {_v} to vector from {_loc1} to {_loc2}
     set vector length of {_v} to {_step}
     loop floor((distance between {_loc1} and {_loc2}) / {_step}) times:
         draw 1 {_particl} at {_loc1} with extra 0 with force
         set {_loc1} to {_loc1} ~ {_v}
+
+# cooldown functions by simpleton
+function cooldowncheckpersonal(p: player) :: boolean:
+    set {_t} to ((metadata value "abilitycooldownpersonal" of {_p}) ? now)
+    if {_t} > now:
+        return true
+    return false
+function addcooldownpersonal(p: player, i: integer):
+    set {_t} to ("%{_i}% seconds" parsed as time span) after now
+    set metadata value "abilitycooldownpersonal" of {_p} to {_t}
 
 on load:
     set {-pressSound} to "block.note_block.bell"
@@ -12,6 +26,7 @@ on load:
         set {spell::%uuid of player%} to "oak_wood"
 
 on right click:
+    set {_t} to ((metadata value "abilitycooldownpersonal" of player) ? now)
     if {spell::%uuid of player%} is "oak_wood":
         if target block isn't air:
             set {_b} to type of target block
@@ -20,39 +35,88 @@ on right click:
             set location of target block of player to {_b}
         else:
             send "&cYou are not looking at a block!"
-            play sound {-declineSound}
+            play sound {-declineSound} to player
     else if {spell::%uuid of player%} is "blaze_rod":
         if target entity is set:
-            line(player's eyes, target entity's eyes, flame, 0.25)
+            if {_t} <= now:
+                line(player's eyes, target entity's eyes, flame, 0.25)
+                damage target entity by 3 hearts
+                target entity.setFireTicks(80)
+                addcooldownpersonal(player, 3)
+                play sound "entity.blaze.shoot" to player
+            else:
+                send "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!"
+                play sound "block.anvil.land" to player
         else if target entity isn't set:
             send "&cYou must look at an entity!"
+    else if {spell::%uuid of player%} is "netherite_hoe":
+        set blocks within target block and target block ~ vector(4, 0, 4) to farmland
 
-command /spell:
+command /spell [<text>]:
     trigger:
-        set metadata tag "spells1" of player to chest inventory named "Spells" with 6 rows
-        set {_s} to metadata tag "spells1" of player
-        set slot integers between 0 and 8 of {_s} to black stained glass pane
-        set {-i::*} to 8, 17, 26, 35, 44, 53, 9, 18, 27, 36, 45, 54, 46, 47, 48, 49, 50, 51, 52, 53 and 55
-        loop {-i::*}:
-            set slot loop-value of {_s} to black stained glass pane
-        set slot 10 of {_s} to oak wood named "<##8A2700>Oak Wood" with lore "&7&oTurn whatever block you look" and "&7&oat into oak wood!" and "" and "&cNOT SELECTED"
-        if {spell::%uuid of player%} is "oak_wood":
-            set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
-        open (metadata tag "spells1" of player) to player
+        if arg-1 isn't set:
+            set metadata tag "spells1" of player to chest inventory named "Spells" with 6 rows
+            set {_s} to metadata tag "spells1" of player
+            set slot integers between 0 and 8 of {_s} to black stained glass pane
+            set {-i::*} to 17, 26, 35, 44, 53, 9, 18, 27, 36, 45, 54, 46, 47, 48, 49, 50, 51, 52, 53 and 55
+            loop {-i::*}:
+                set slot loop-value of {_s} to black stained glass pane
+            set {-info} to player skull named "<##ffd670>Info" with lore "" and "<##0993c2>&oClicking on a spell item equips it."
+            set slot 8 of {_s} to {-info}
+            add nbt compound of "{display:{Name:""{\""text\"":\""UCC Information\""}""},SkullOwner:{Id:[I;1578955795,-941734627,-1229366653,1269144208],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTFjNDEzYThkMjZkNDY1NDFmYmVhZTRkM2U4MzBiYzRmYjE3YWIwNDAzODZkMTJjYzQzMDE0ZGE4N2VkOGFhZiJ9fX0=""}]}}}" to nbt compound of slot 8 of {_s}
+            set name of slot 8 of {_s} to "<##ffd670>Info"
+            set slot 10 of {_s} to oak wood named "<##8A2700>Oak Wood" with lore "&7&oTurn whatever block you look" and "&7&oat into oak wood!" and "" and "&cNOT SELECTED"
+            set slot 11 of {_s} to blaze rod named "<##FF7100>Blaze Rod" with lore "&7&oShoot fire at whatever" and "&7&oyou're looking at!" and "" and "&cNOT SELECTED"
+            set slot 12 of {_s} to netherite hoe named "<##737273>Netherite Hoe" with lore "&7&oCreate a 5x5 farmland around you to" and "&7&otrick your enemies! (Idea by SmartPotatoes)" and "" and "&cNOT SELECTED"
+            if {spell::%uuid of player%} is "oak_wood":
+                set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "blaze_rod":
+                set line 4 of lore of slot 11 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "netherite_hoe":
+                set line 4 of lore of slot 12 of {_s} to "&aSELECTED"
+            open (metadata tag "spells1" of player) to player
+        else:
+            set {-spells::*} to "oak_wood", "blaze_rod", "netherite_hoe"
+            if {-spells::*} contains arg-1:
+                set {spell::%uuid of player%} to arg-1
+                send "&eYour spell has been changed to ""%arg-1%"""
+            else:
+                send "&c""%arg-1%"" is not a spell!"
 
 on inventory click:
     if event-inventory is (metadata tag "spells1" of player):
         cancel event
         set {_s} to metadata tag "spells1" of player
         if index of event-slot is 10:
-            play sound {-pressSound}
+            play sound {-pressSound} to player
             if {spell::%uuid of player%} isn't "oak_wood":
                 set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
+                set line 4 of lore of slot 11 of {_s} to "&cNOT SELECTED"
+                set line 4 of lore of slot 12 of {_s} to "&cNOT SELECTED"
                 set {spell::%uuid of player%} to "oak_wood"
             else:
                 set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
                 set {spell::%uuid of player%} to ""
         else if index of event-slot is 11:
-            set {spell::%uuid of player%} to "blaze_rod"
-            play sound {-pressSound}
+            play sound {-pressSound} to player
+            if {spell::%uuid of player%} isn't "blaze_rod":
+                set line 4 of lore of slot 11 of {_s} to "&aSELECTED"
+                set line 4 of lore of slot 12 of {_s} to "&cNOT SELECTED"
+                set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
+                set {spell::%uuid of player%} to "blaze_rod"
+            else:
+                set line 4 of lore of slot 11 of {_s} to "&cNOT SELECTED"
+                set {spell::%uuid of player%} to ""
+        else if index of event-slot is 12:
+            play sound {-pressSound} to player
+            if {spell::%uuid of player%} isn't "netherite_hoe":
+                set line 4 of lore of slot 12 of {_s} to "&aSELECTED"
+                set line 4 of lore of slot 11 of {_s} to "&cNOT SELECTED"
+                set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
+                set {spell::%uuid of player%} to "netherite_hoe"
+            else:
+                set line 4 of lore of slot 12 of {_s} to "&cNOT SELECTED"
+                set {spell::%uuid of player%} to ""
 
+on tab complete of "/spell":
+    set tab completions for position 1 to "oak_wood", "blaze_rod", "netherite_hoe"
