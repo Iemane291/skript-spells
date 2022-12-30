@@ -1,58 +1,265 @@
+#1.0
+# THE FOLLOWING CODE IS OWNED BY MINI AND SMARTPOTATOES
+# You are allowed to use this Skript as long as you credit Mini and SmartPotatoes.
+
+
 import:
     org.bukkit.entity.Entity
 
-# particle function by poa (creator of poask addon)
-function line(loc1: location, loc2: location, particl: particle, step: number=0.25):
-    set {_v} to vector from {_loc1} to {_loc2}
-    set vector length of {_v} to {_step}
-    loop floor((distance between {_loc1} and {_loc2}) / {_step}) times:
-        draw 1 {_particl} at {_loc1} with extra 0 with force
-        set {_loc1} to {_loc1} ~ {_v}
-
-# cooldown functions by simpleton
-function cooldowncheckpersonal(p: player) :: boolean:
-    set {_t} to ((metadata value "abilitycooldownpersonal" of {_p}) ? now)
-    if {_t} > now:
-        return true
-    return false
 function addcooldownpersonal(p: player, i: integer):
     set {_t} to ("%{_i}% seconds" parsed as time span) after now
     set metadata value "abilitycooldownpersonal" of {_p} to {_t}
 
+function addpersontimer(p: player, i: integer):
+    set {_t} to ("%{_i}% seconds" parsed as time span) after now
+    set metadata value "persontimer" of {_p} to {_t}
+
+on damage:
+    damage cause is fall
+    {-onslime::%victim's uuid%} is set
+    fall distance of victim > 2
+    cancel event if damage cause is fall
+
 on load:
     set {-pressSound} to "block.note_block.bell"
     set {-declineSound} to "entity.villager.no"
-    if {spell::%uuid of player%} isn't set:
-        set {spell::%uuid of player%} to "oak_wood"
+    set {-spells::*} to "oak_wood", "blaze_rod", "netherite_hoe", "ice", "wither_rose", "tnt", "fire_charge", "lightning_rod", "end_rod", "slime_block", "totem_of_undying", "ender_pearl", "spyglass", "yellow_stained_glass"
+
+on join:
+    set {spell::%uuid of player%} to "" if {spell::%uuid of player%} is not set
 
 on right click:
     set {_t} to ((metadata value "abilitycooldownpersonal" of player) ? now)
-    if {spell::%uuid of player%} is "oak_wood":
-        if target block isn't air:
-            set {_b} to type of target block
-            set target block of player to oak wood
-            wait 2.5 seconds
-            set location of target block of player to {_b}
-        else:
-            send "&cYou are not looking at a block!"
-            play sound {-declineSound} to player
-    else if {spell::%uuid of player%} is "blaze_rod":
-        if target entity is set:
+    set {_pt} to ((metadata value "persontimer" of player) ? now)
+    if nbt compound of player's tool has tag "wandid":
+        cancel event
+        if {spell::%player's uuid%} is "":
+            send action bar "&cYou don't have a spell selected!" to player
+        else if {spell::%uuid of player%} is "oak_wood":
             if {_t} <= now:
-                line(player's eyes, target entity's eyes, flame, 0.25)
-                damage target entity by 3 hearts
-                target entity.setFireTicks(80)
-                addcooldownpersonal(player, 3)
-                play sound "entity.blaze.shoot" to player
+                if type of target block is oak wood:
+                    send action bar "&cYou must not look at wood!" to player
+                    play sound {-declineSound} to player
+                else if target block isn't air:
+                    set {_b} to type of target block
+                    set {_t} to location of target block
+                    set target block to oak wood
+                    wait 2.5 seconds
+                    set block at {_t} to {_b}
+                else:
+                    send action bar "&cYou must look at a block!" to player
+                    play sound {-declineSound} to player
             else:
-                send "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!"
-                play sound "block.anvil.land" to player
-        else if target entity isn't set:
-            send "&cYou must look at an entity!"
-    else if {spell::%uuid of player%} is "netherite_hoe":
-        set blocks within target block and target block ~ vector(4, 0, 4) to farmland
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "blaze_rod":
+            if {_t} <= now:
+                if target entity is set:
+                    line(player's eyes, target entity's eyes, flame, 0.25)
+                    damage target entity by 3 hearts
+                    target entity.setFireTicks(80)
+                    make all players see block at target entity as fire
+                    addcooldownpersonal(player, 3)
+                    play sound "entity.blaze.shoot" to player
+                else:
+                    send action bar "&cYou must look at an entity!" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "netherite_hoe":
+            if {_t} <= now:
+                addcooldownpersonal(player, 5)
+                set blocks within target block and target block ~ vector(4, 0, 4) to farmland
+                addcooldownpersonal(player, 1)
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "ice":
+            if {_t} <= now:
+                if target entity is set:
+                    specialline(player's eyes, target entity's eyes, ice, 0.25)
+                    target entity.setFreezeTicks(50)
+                    play sound "entity.zombie_villager.cure" to player and target entity
+                    damage target entity by 3.5 hearts
+                    addcooldownpersonal(player,5)
+                else:
+                    send action bar "&cYou must look at an entity!" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "wither_rose":
+            if {_t} <= now:
+                if target entity is set:
+                    line(player's eyes, target entity's eyes, "witch" parsed as particle, 0.25)
+                    apply wither 1 to target entity for 2.5 seconds
+                    play sound "entity.wither.shoot" to player and target entity
+                    addcooldownpersonal(player,5)
+                else:
+                    send action bar "&cYou must look at an entity!" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "tnt":
+            if {_t} <= now:
+                addcooldownpersonal(player,5)
+                summon primed tnt at player
+                push last spawned entity in player's direction with speed 1
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%player's uuid%} is "fire_charge":
+            if {_t} <= now:
+                addcooldownpersonal(player,5)
+                set {_l} to location infront of player
+                summon fireball at {_l}
+                play sound "entity.ghast.shoot" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "lightning_rod":
+            if {_t} <= now:
+                if target entity is set:
+                    addcooldownpersonal(player, 5)
+                    line(player's eyes, target entity's eyes, glow, 0.25)
+                    strike lightning at target entity
+                else:
+                    send action bar "&cYou must look at an entity!" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "end_rod":
+            if {_t} <= now:
+                if target entity is set:
+                    addcooldownpersonal(player, 5)
+                    line(player's eyes, target entity's eyes, end_rod, 0.25)
+                    apply levitation 5 to target entity for 3 seconds
+                else:
+                    send action bar "&cYou must look at an entity!" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "slime_block":
+            if {_pt} > now:
+                stop
+            else if {_t} <= now:
+                addcooldownpersonal(player, 10)
+                addpersontimer(player,4)
+                set {-onslime::%player%} to true
+                send action bar "&4| &c⬛&a⬛⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 1 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛&a⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 3 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛⬛&a⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 5 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 10 to player
+                wait 1 second
+                send action bar "" to player
+                play sound "block.note_block.flute" to player
+                delete {-onslime::%player%}
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "totem_of_undying":
+            if {_pt} > now:
+                stop
+            else if {_t} <= now:
+                addcooldownpersonal(player, 20)
+                addpersontimer(player,3)
+                set {-ontotem::%player's uuid%} to true
+                send action bar "&4| &c⬛&a⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 1 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛&a⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 3 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 5 to player
+                wait 1 second
+                delete {-ontotem::%player's uuid%}
+                send action bar "" to player
+                play sound "block.note_block.flute" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "ender_pearl":
+            if {_t} <= now:
+                addcooldownpersonal(player, 15)
+                summon ender pearl at player
+                push last spawned entity in player's direction with speed 1
+                make player ride last spawned entity
+                play sound "entity.ender_pearl.throw" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "spyglass":
+            if {_pt} > now:
+                stop
+            else if {_t} <= now:
+                addcooldownpersonal(player, 5)
+                addpersontimer(player,5)
+                set {_xray} to location of player
+                apply potion of night vision of tier 10 without particles to player for 5.5 seconds
+                loop blocks in radius 10 around {_xray}:
+                    loop-block is not any ore or air
+                    make player see loop-block as barrier
+                send action bar "&4| &c⬛&a⬛⬛⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 1 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛&a⬛⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 3 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛⬛&a⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 3 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛⬛⬛&a⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 3 to player
+                wait 1 second
+                send action bar "&4| &c⬛⬛⬛⬛⬛ &4|" to player
+                play sound "block.note_block.bit" at volume 3 to player
+                wait 1 second
+                loop blocks in radius 10 around {_xray}:
+                    make player see loop-block as loop-block
+                send action bar "" to player
+                play sound "block.note_block.flute" to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
+        else if {spell::%uuid of player%} is "yellow_stained_glass":
+            if {_t} <= now:
+                if target entity is set:
+                    addcooldownpersonal(player, 15)
+                    set {_chance} to round(random integer between 1 and 50)
+                    if {_chance} is 1 or 2 or 3 or 4 or 5:
+                        kill target entity
+                        send title "&a✔" with subtitle "&aFortunately, you survived." to player
+                        send title "&c✘" with subtitle "&cUnfortunately, you died." to target entity if target entity is a player
+                        play sound "block.note_block.bell" to player
+                        play sound "block.note_block.bit" at volume 0.5 to target entity if target entity is a player
+                    else if {_chance} is 6 or 7 or 8 or 9 or 10:
+                        kill player
+                        send title "&c✘" with subtitle "&cUnfortunately, you died." to player
+                        send title "&a✔" with subtitle "&aFortunately, you survived." to target entity if target entity is a player
+                        play sound "block.note_block.bell" to target entity if target entity is a player
+                        play sound "block.note_block.bit" at volume 0.5 to player
+                    else:
+                        send title "&a✔" with subtitle "&aFortunately, nobody died." to player
+                        send title "&a✔" with subtitle "&aFortunately, nobody died." to target entity if target entity is a player
+                        play sound "block.note_block.bell" to target entity if target entity is a player
+                        play sound "block.note_block.bell" to player
+                    
+                else:
+                    send action bar "&cYou must look at an entity!" to player
+                    play sound {-declineSound} to player
+            else:
+                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
+                play sound {-declineSound} to player
 
 command /spell [<text>]:
+    aliases: spells
     trigger:
         if arg-1 isn't set:
             set metadata tag "spells1" of player to chest inventory named "Spells" with 6 rows
@@ -63,23 +270,65 @@ command /spell [<text>]:
                 set slot loop-value of {_s} to black stained glass pane
             set {-info} to player skull named "<##ffd670>Info" with lore "" and "<##0993c2>&oClicking on a spell item equips it."
             set slot 8 of {_s} to {-info}
-            add nbt compound of "{display:{Name:""{\""text\"":\""UCC Information\""}""},SkullOwner:{Id:[I;1578955795,-941734627,-1229366653,1269144208],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTFjNDEzYThkMjZkNDY1NDFmYmVhZTRkM2U4MzBiYzRmYjE3YWIwNDAzODZkMTJjYzQzMDE0ZGE4N2VkOGFhZiJ9fX0=""}]}}}" to nbt compound of slot 8 of {_s}
+            set slot 0 of {_s} to stick named "&eSpells Wand" with lore "&7&oRight click whilst holding this to use spells!" and "&7&oLeft click me to get the &r&eSpells Wand&7!"
+            add nbt compound of "{SkullOwner:{Id:[I;1578955795,-941734627,-1229366653,1269144208],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTFjNDEzYThkMjZkNDY1NDFmYmVhZTRkM2U4MzBiYzRmYjE3YWIwNDAzODZkMTJjYzQzMDE0ZGE4N2VkOGFhZiJ9fX0=""}]}}}" to nbt compound of slot 8 of {_s}
             set name of slot 8 of {_s} to "<##ffd670>Info"
             set slot 10 of {_s} to oak wood named "<##8A2700>Oak Wood" with lore "&7&oTurn whatever block you look" and "&7&oat into oak wood!" and "" and "&cNOT SELECTED"
             set slot 11 of {_s} to blaze rod named "<##FF7100>Blaze Rod" with lore "&7&oShoot fire at whatever" and "&7&oyou're looking at!" and "" and "&cNOT SELECTED"
-            set slot 12 of {_s} to netherite hoe named "<##737273>Netherite Hoe" with lore "&7&oCreate a 5x5 farmland around you to" and "&7&otrick your enemies! (Idea by SmartPotatoes)" and "" and "&cNOT SELECTED"
+            set slot 12 of {_s} to netherite hoe named "<##737273>Netherite Hoe" with lore "&7&oCreate a 5x5 farmland around you to" and "&7&otrick your enemies!" and "" and "&cNOT SELECTED"
+            set slot 13 of {_s} to ice named "<##C8E9E9>Ice" with lore "&7&oShoot ice at whatever" and "&7&oentity you're looking at!" and "" and "&cNOT SELECTED"
+            set slot 14 of {_s} to wither rose named "<##555555>Wither Rose" with lore "&7&oShoot withering at whatever" and "&7&oentity you're looking at!" and "" and "&cNOT SELECTED"
+            set slot 15 of {_s} to tnt named "<##ff0000>TnT" with lore "&7&oShoots a tnt from" and "&7&oyourself forwards!" and "" and "&cNOT SELECTED"
+            set slot 16 of {_s} to fire charge named "<##ffa200>Fire Charge" with lore "&7&oShoots a fireball towards the" and "&7&opoint your looking at!" and "" and "&cNOT SELECTED"
+            set slot 19 of {_s} to lightning rod named "<##eedd82>Lightning Rod" with lore "&7&oSummons a lightning at whatever" and "&7&oentity you're looking at!" and "" and "&cNOT SELECTED"
+            set slot 20 of {_s} to end rod named "<##eedd82>End Rod" with lore "&7&oShoot levitation at whatever" and "&7&oentity you're looking at!" and "" and "&cNOT SELECTED"
+            set slot 21 of {_s} to slime block named "<##42D629>Slime Block" with lore "&7&oMakes you bounce on" and "&7&oblocks whenever you fall for 4 seconds!" and "" and "&cNOT SELECTED"
+            set slot 22 of {_s} to totem of undying named "<##F4FF00>Totem of Undying" with lore "&7&oTemporarily be invincible to" and "&7&oanything for 3 seconds!" and "" and "&cNOT SELECTED"
+            set slot 23 of {_s} to ender pearl named "<##258273>Ender Pearl" with lore "&7&oTeleports player to whatever" and "&7&oblock you're looking at!" and "" and "&cNOT SELECTED"
+            set slot 24 of {_s} to spyglass named "<##FFDE03>Spyglass" with lore "&7&oShows ores around the" and "&7&oaplayer for 5 seconds!" and "" and "&cNOT SELECTED"
+            set slot 25 of {_s} to yellow stained glass named "<##FFF800>Yellow Stained Glass" with lore "&7&o50/50 chance that the entity you" and "&7&oare looking at or you will die instantly!" and "" and "&cNOT SELECTED"
             if {spell::%uuid of player%} is "oak_wood":
                 set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
             else if {spell::%uuid of player%} is "blaze_rod":
                 set line 4 of lore of slot 11 of {_s} to "&aSELECTED"
             else if {spell::%uuid of player%} is "netherite_hoe":
                 set line 4 of lore of slot 12 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "ice":
+                set line 4 of lore of slot 13 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "wither_rose":
+                set line 4 of lore of slot 14 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "tnt":
+                set line 4 of lore of slot 15 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "fire_charge":
+                set line 4 of lore of slot 16 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "lightning_rod":
+                set line 4 of lore of slot 19 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "end_rod":
+                set line 4 of lore of slot 20 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "slime_block":
+                set line 4 of lore of slot 21 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "totem_of_undying":
+                set line 4 of lore of slot 22 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "ender_pearl":
+                set line 4 of lore of slot 23 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "spyglass":
+                set line 4 of lore of slot 24 of {_s} to "&aSELECTED"
+            else if {spell::%uuid of player%} is "yellow_stained_glass":
+                set line 4 of lore of slot 25 of {_s} to "&aSELECTED"
             open (metadata tag "spells1" of player) to player
         else:
-            set {-spells::*} to "oak_wood", "blaze_rod", "netherite_hoe"
-            if {-spells::*} contains arg-1:
-                set {spell::%uuid of player%} to arg-1
-                send "&eYour spell has been changed to ""%arg-1%"""
+            if arg-1 is "wand":
+                remove all stick named "&eSpells Wand" with lore "&7&oRight click whilst holding this to use spells!" from player
+                set {_wand} to stick named "&eSpells Wand" with lore "&7&oRight click whilst holding this to use spells!"
+                add nbt compound of "{wandid:%random integer between 1 and 45000%}" to nbt compound of {_wand}
+                give 1 of {_wand} to player
+            else if arg-1 is "random":
+                set {-rng} to random element out of {-spells::*}
+                set {spell::%uuid of player%} to {-rng}
+                send "&eYour spell has been changed to ""%{-rng}%"""
+            else if {-spells::*} contains arg-1:
+                set {spell::%uuid of player%} to arg-1 in lowercase
+                send "&eYour spell has been changed to ""%arg-1 in lowercase%"""
             else:
                 send "&c""%arg-1%"" is not a spell!"
 
@@ -87,36 +336,78 @@ on inventory click:
     if event-inventory is (metadata tag "spells1" of player):
         cancel event
         set {_s} to metadata tag "spells1" of player
-        if index of event-slot is 10:
+        if index of event-slot is 0:
+            remove all stick named "&eSpells Wand" with lore "&7&oRight click whilst holding this to use spells!" from player
+            set {_wand} to stick named "&eSpells Wand" with lore "&7&oRight click whilst holding this to use spells!"
+            add nbt compound of "{wandid:%random integer between 1 and 45000%}" to nbt compound of {_wand}
+            give 1 of {_wand} to player
+            stop
+        set {_slot} to 9
+        loop {-spells::*}:
+            add 1 to {_slot}
+            if {_slot} is 17 or 26:
+                add 2 to {_slot}
+            index of event-slot is {_slot}
+            set {_spell} to loop-value
             play sound {-pressSound} to player
-            if {spell::%uuid of player%} isn't "oak_wood":
-                set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
-                set line 4 of lore of slot 11 of {_s} to "&cNOT SELECTED"
-                set line 4 of lore of slot 12 of {_s} to "&cNOT SELECTED"
-                set {spell::%uuid of player%} to "oak_wood"
+            if {spell::%player's uuid%} isn't {_spell}:
+                set {spell::%uuid of player%} to {_spell}
+                unselect(player)
+                set line 4 of lore of slot {_slot} of {_s} to "&aSELECTED"
             else:
-                set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
-                set {spell::%uuid of player%} to ""
-        else if index of event-slot is 11:
-            play sound {-pressSound} to player
-            if {spell::%uuid of player%} isn't "blaze_rod":
-                set line 4 of lore of slot 11 of {_s} to "&aSELECTED"
-                set line 4 of lore of slot 12 of {_s} to "&cNOT SELECTED"
-                set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
-                set {spell::%uuid of player%} to "blaze_rod"
-            else:
-                set line 4 of lore of slot 11 of {_s} to "&cNOT SELECTED"
-                set {spell::%uuid of player%} to ""
-        else if index of event-slot is 12:
-            play sound {-pressSound} to player
-            if {spell::%uuid of player%} isn't "netherite_hoe":
-                set line 4 of lore of slot 12 of {_s} to "&aSELECTED"
-                set line 4 of lore of slot 11 of {_s} to "&cNOT SELECTED"
-                set line 4 of lore of slot 10 of {_s} to "&cNOT SELECTED"
-                set {spell::%uuid of player%} to "netherite_hoe"
-            else:
-                set line 4 of lore of slot 12 of {_s} to "&cNOT SELECTED"
-                set {spell::%uuid of player%} to ""
+                set line 4 of lore of slot {_slot} of {_s} to "&cNOT SELECTED"
+                set {spell::%player's uuid%} to ""
+            stop
 
-on tab complete of "/spell":
-    set tab completions for position 1 to "oak_wood", "blaze_rod", "netherite_hoe"
+on tab complete of "/spell" or "/spells":
+    set tab completions for position 1 to {-spells::*}, "random" and "wand"
+
+#FUNCTIONS
+
+on unload:
+    delete {-onslime::*}
+
+# particle function by poa (creator of poask addon)
+function line(loc1: location, loc2: location, particl: particle, step: number=0.25):
+    set {_v} to vector from {_loc1} to {_loc2}
+    set vector length of {_v} to {_step}
+    loop floor((distance between {_loc1} and {_loc2}) / {_step}) times:
+        draw 1 {_particl} at {_loc1} with extra 0 with force
+        set {_loc1} to {_loc1} ~ {_v}
+
+# particle function by poa (creator of poask addon) Reworked by SmartPotatoes
+function specialline(loc1: location, loc2: location, item: itemtype, step: number=0.25):
+    set {_v} to vector from {_loc1} to {_loc2}
+    set vector length of {_v} to {_step}
+    loop floor((distance between {_loc1} and {_loc2}) / {_step}) times:
+        if itemtype is a block:
+            draw 1 of block particle using {_item} at {_loc1}
+        else:
+            draw 1 of item particle using {_item} at {_loc1}
+        set {_loc1} to {_loc1} ~ {_v}
+
+function unselect(p: player):
+    set {_s} to metadata tag "spells1" of {_p}
+    set {_slot} to 10
+    loop 28 times:
+        if {_slot} is 17 or 26 or 35:
+            add 2 to {_slot}
+        set line 4 of lore of slot {_slot} of {_s} to "&cNOT SELECTED"
+        add 1 to {_slot}
+
+on block ignite:
+    if "%event.getCause()%" = "LIGHTNING":
+        cancel event
+
+on swap hand items:
+    cancel event
+    execute player command "/spells"
+
+
+
+on death:
+    remove all stick named "&eSpells Wand" with lore "&7&oRight click whilst holding this to use spells!" from drops
+    if victim is a player:
+        if {-ontotem::%victim's uuid%} is set:
+            cancel event
+            play resurrection by totem at victim
