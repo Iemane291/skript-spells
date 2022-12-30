@@ -23,11 +23,10 @@ on damage:
 on load:
     set {-pressSound} to "block.note_block.bell"
     set {-declineSound} to "entity.villager.no"
-    set {-spells::*} to "oak_wood", "blaze_rod", "netherite_hoe", "ice", "wither_rose", "tnt", "fire_charge", "lightning_rod", "end_rod", "slime_block", "totem_of_undying", "ender_pearl", "spyglass", "yellow_stained_glass"
+    set {-spells::*} to "oak_wood", "blaze_rod", "netherite_hoe", "ice", "wither_rose", "tnt", "fire_charge", "lightning_rod", "end_rod", "slime_block", "totem_of_undying", "ender_pearl", "yellow_stained_glass"
 
 on join:
     set {spell::%uuid of player%} to "" if {spell::%uuid of player%} is not set
-
 on right click:
     set {_t} to ((metadata value "abilitycooldownpersonal" of player) ? now)
     set {_pt} to ((metadata value "persontimer" of player) ? now)
@@ -184,7 +183,7 @@ on right click:
                 play sound "block.note_block.flute" to player
             else:
                 send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
-                play sound {-declineSound} to player
+                play sound  {-declineSound} to player
         else if {spell::%uuid of player%} is "ender_pearl":
             if {_t} <= now:
                 addcooldownpersonal(player, 15)
@@ -192,39 +191,6 @@ on right click:
                 push last spawned entity in player's direction with speed 1
                 make player ride last spawned entity
                 play sound "entity.ender_pearl.throw" to player
-            else:
-                send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
-                play sound {-declineSound} to player
-        else if {spell::%uuid of player%} is "spyglass":
-            if {_pt} > now:
-                stop
-            else if {_t} <= now:
-                addcooldownpersonal(player, 5)
-                addpersontimer(player,5)
-                set {_xray} to location of player
-                apply potion of night vision of tier 10 without particles to player for 5.5 seconds
-                loop blocks in radius 10 around {_xray}:
-                    loop-block is not any ore or air
-                    make player see loop-block as barrier
-                send action bar "&4| &c⬛&a⬛⬛⬛⬛ &4|" to player
-                play sound "block.note_block.bit" at volume 1 to player
-                wait 1 second
-                send action bar "&4| &c⬛⬛&a⬛⬛⬛ &4|" to player
-                play sound "block.note_block.bit" at volume 3 to player
-                wait 1 second
-                send action bar "&4| &c⬛⬛⬛&a⬛⬛ &4|" to player
-                play sound "block.note_block.bit" at volume 3 to player
-                wait 1 second
-                send action bar "&4| &c⬛⬛⬛⬛&a⬛ &4|" to player
-                play sound "block.note_block.bit" at volume 3 to player
-                wait 1 second
-                send action bar "&4| &c⬛⬛⬛⬛⬛ &4|" to player
-                play sound "block.note_block.bit" at volume 3 to player
-                wait 1 second
-                loop blocks in radius 10 around {_xray}:
-                    make player see loop-block as loop-block
-                send action bar "" to player
-                play sound "block.note_block.flute" to player
             else:
                 send action bar "&cYou are on cooldown for %round((unix timestamp of {_t}) - (unix timestamp of now))% seconds!" to player
                 play sound {-declineSound} to player
@@ -285,8 +251,7 @@ command /spell [<text>]:
             set slot 21 of {_s} to slime block named "<##42D629>Slime Block" with lore "&7&oMakes you bounce on" and "&7&oblocks whenever you fall for 4 seconds!" and "" and "&cNOT SELECTED"
             set slot 22 of {_s} to totem of undying named "<##F4FF00>Totem of Undying" with lore "&7&oTemporarily be invincible to" and "&7&oanything for 3 seconds!" and "" and "&cNOT SELECTED"
             set slot 23 of {_s} to ender pearl named "<##258273>Ender Pearl" with lore "&7&oTeleports player to whatever" and "&7&oblock you're looking at!" and "" and "&cNOT SELECTED"
-            set slot 24 of {_s} to spyglass named "<##FFDE03>Spyglass" with lore "&7&oShows ores around the" and "&7&oaplayer for 5 seconds!" and "" and "&cNOT SELECTED"
-            set slot 25 of {_s} to yellow stained glass named "<##FFF800>Yellow Stained Glass" with lore "&7&o50/50 chance that the entity you" and "&7&oare looking at or you will die instantly!" and "" and "&cNOT SELECTED"
+            set slot 24 of {_s} to yellow stained glass named "<##FFF800>Yellow Stained Glass" with lore "&7&o50/50 chance that the entity you" and "&7&oare looking at or you will die instantly!" and "" and "&cNOT SELECTED"
             if {spell::%uuid of player%} is "oak_wood":
                 set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
             else if {spell::%uuid of player%} is "blaze_rod":
@@ -311,10 +276,8 @@ command /spell [<text>]:
                 set line 4 of lore of slot 22 of {_s} to "&aSELECTED"
             else if {spell::%uuid of player%} is "ender_pearl":
                 set line 4 of lore of slot 23 of {_s} to "&aSELECTED"
-            else if {spell::%uuid of player%} is "spyglass":
-                set line 4 of lore of slot 24 of {_s} to "&aSELECTED"
             else if {spell::%uuid of player%} is "yellow_stained_glass":
-                set line 4 of lore of slot 25 of {_s} to "&aSELECTED"
+                set line 4 of lore of slot 24 of {_s} to "&aSELECTED"
             open (metadata tag "spells1" of player) to player
         else:
             if arg-1 is "wand":
