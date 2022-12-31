@@ -2,9 +2,9 @@
 # THE FOLLOWING CODE IS OWNED BY MINI AND SMARTPOTATOES
 # You are allowed to use this Skript as long as you credit Mini and SmartPotatoes.
 
-
 import:
     org.bukkit.entity.Entity
+
 
 function addcooldownpersonal(p: player, i: integer):
     set {_t} to ("%{_i}% seconds" parsed as time span) after now
@@ -56,7 +56,7 @@ on right click:
                 if target entity is set:
                     line(player's eyes, target entity's eyes, flame, 0.25)
                     damage target entity by 3 hearts
-                    target entity.setFireTicks(80)
+                    ignite target entity for 3 seconds
                     make all players see block at target entity as fire
                     addcooldownpersonal(player, 3)
                     play sound "entity.blaze.shoot" to player
@@ -77,8 +77,8 @@ on right click:
             if {_t} <= now:
                 if target entity is set:
                     specialline(player's eyes, target entity's eyes, ice, 0.25)
-                    target entity.setFreezeTicks(50)
                     play sound "entity.zombie_villager.cure" to player and target entity
+                    target entity.setFreezeTicks(80)
                     damage target entity by 3.5 hearts
                     addcooldownpersonal(player,5)
                 else:
@@ -198,7 +198,7 @@ on right click:
             if {_t} <= now:
                 if target entity is set:
                     addcooldownpersonal(player, 15)
-                    set {_chance} to round(random integer between 1 and 50)
+                    set {_chance} to round(random integer between 1 and 80)
                     if {_chance} is 1 or 2 or 3 or 4 or 5:
                         kill target entity
                         send title "&a✔" with subtitle "&aFortunately, you survived." to player
@@ -212,8 +212,8 @@ on right click:
                         play sound "block.note_block.bell" to target entity if target entity is a player
                         play sound "block.note_block.bit" at volume 0.5 to player
                     else:
-                        send title "&a✔" with subtitle "&aFortunately, nobody died." to player
-                        send title "&a✔" with subtitle "&aFortunately, nobody died." to target entity if target entity is a player
+                        send title "&b✔" with subtitle "&bFortunately, nobody died." to player
+                        send title "&b✔" with subtitle "&bFortunately, nobody died." to target entity if target entity is a player
                         play sound "block.note_block.bell" to target entity if target entity is a player
                         play sound "block.note_block.bell" to player
                     
@@ -251,7 +251,7 @@ command /spell [<text>]:
             set slot 21 of {_s} to slime block named "<##42D629>Slime Block" with lore "&7&oMakes you bounce on" and "&7&oblocks whenever you fall for 4 seconds!" and "" and "&cNOT SELECTED"
             set slot 22 of {_s} to totem of undying named "<##F4FF00>Totem of Undying" with lore "&7&oTemporarily be invincible to" and "&7&oanything for 3 seconds!" and "" and "&cNOT SELECTED"
             set slot 23 of {_s} to ender pearl named "<##258273>Ender Pearl" with lore "&7&oTeleports player to whatever" and "&7&oblock you're looking at!" and "" and "&cNOT SELECTED"
-            set slot 24 of {_s} to yellow stained glass named "<##FFF800>Yellow Stained Glass" with lore "&7&o50/50 chance that the entity you" and "&7&oare looking at or you will die instantly!" and "" and "&cNOT SELECTED"
+            set slot 24 of {_s} to yellow stained glass named "<##FFF800>Yellow Stained Glass" with lore "&7&oThere's a chance that the entity you" and "&7&oare looking at or you will die instantly!" and "" and "&cNOT SELECTED"
             if {spell::%uuid of player%} is "oak_wood":
                 set line 4 of lore of slot 10 of {_s} to "&aSELECTED"
             else if {spell::%uuid of player%} is "blaze_rod":
