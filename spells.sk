@@ -2,10 +2,6 @@
 # THE FOLLOWING CODE IS OWNED BY MINI AND SMARTPOTATOES
 # You are allowed to use this Skript as long as you credit Mini and SmartPotatoes.
 
-import:
-    org.bukkit.entity.Entity
-
-
 function addcooldownpersonal(p: player, i: integer):
     set {_t} to ("%{_i}% seconds" parsed as time span) after now
     set metadata value "abilitycooldownpersonal" of {_p} to {_t}
@@ -78,7 +74,7 @@ on right click:
                 if target entity is set:
                     specialline(player's eyes, target entity's eyes, ice, 0.25)
                     play sound "entity.zombie_villager.cure" to player and target entity
-                    target entity.setFreezeTicks(80)
+                    set frozen time of target entity to 3 seconds
                     damage target entity by 3.5 hearts
                     addcooldownpersonal(player,5)
                 else:
@@ -90,7 +86,7 @@ on right click:
             if {_t} <= now:
                 if target entity is set:
                     line(player's eyes, target entity's eyes, "witch" parsed as particle, 0.25)
-                    apply wither 1 to target entity for 2.5 seconds
+                    apply wither 1 to target entity for 4 seconds
                     play sound "entity.wither.shoot" to player and target entity
                     addcooldownpersonal(player,5)
                 else:

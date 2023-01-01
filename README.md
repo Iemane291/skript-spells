@@ -4,7 +4,6 @@ Writing a spell for almost every item in Minecraft using SkriptLang, made by @Ie
 # **Requirements**
 
 - <a href="https://github.com/SkriptLang/Skript/releases">Skript</a>
-- <a href="https://github.com/TPGamesNL/skript-reflect/releases/">skript-reflect</a>
 - <a href="https://github.com/ShaneBeee/SkBee/releases">SkBee</a>
 
 # **Spell Info**
